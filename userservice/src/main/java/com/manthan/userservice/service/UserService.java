@@ -5,11 +5,13 @@ import com.manthan.userservice.dto.RegisterRequest;
 import com.manthan.userservice.dto.UserResponse;
 import com.manthan.userservice.model.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
     private final UserRepository userRepository;
 
@@ -52,5 +54,10 @@ public class UserService {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
+    }
+
+    public Boolean existsByUserId(String userId) {
+        log.info("Calling user Validation Api for userId: "+userId);
+        return userRepository.existsById(userId);
     }
 }
