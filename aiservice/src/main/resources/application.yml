@@ -1,10 +1,10 @@
 spring:
   application:
-    name: activityservice
+    name: aiservice
   data:
     mongodb:
-      uri: mongodb+srv://jadhavmanthan33:manthan@cluster0.oesvpam.mongodb.net/fitnessapp
-      database: fitnessapp
+      uri: mongodb+srv://jadhavmanthan33:manthan@cluster0.oesvpam.mongodb.net/fitnessrecommendation
+      database: fitnessrecommendation
   rabbitmq:
     host: localhost
     port: 5672
@@ -12,8 +12,7 @@ spring:
     password: admin123
 
 server:
-  port: 8082
-
+  port: 8083
 
 eureka:
   instance:
@@ -23,7 +22,6 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
 
-
 rabbitmq:
   exchange:
     name: fitness.exchange
@@ -31,6 +29,11 @@ rabbitmq:
     name: activity.queue
   routing:
     key: activity.tracking
+
+gemini:
+  api:
+    url: ${GEMINI_API_URL}
+    key: ${GEMINI_API_KEY}
 
 
 
