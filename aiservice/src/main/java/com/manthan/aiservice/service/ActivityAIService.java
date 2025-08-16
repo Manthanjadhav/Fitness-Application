@@ -1,6 +1,7 @@
 package com.manthan.aiservice.service;
 
 import com.manthan.aiservice.dto.ActivityDTO;
+import com.manthan.aiservice.model.Recommendations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,16 +11,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ActivityAIService {
     private final GeminiService geminiService;
+    private final GeminiResponseParser geminiResponseParser;
 
-    public String generateRecommendation(ActivityDTO activityDTO)
+    public Recommendations generateRecommendation(ActivityDTO activity)
     {
-        String prompt = createPromptForActivity(activityDTO);
+        String prompt = createPromptForActivity(activity);
         String aiResponse = geminiService.getAnswer(prompt);
-        log.info("Response from AI :{} ", aiResponse);
-        return aiResponse;
+        return geminiResponseParser.parseGeminiResponse(aiResponse, activity.getId(), activity.getUserId(), activity.getType().toString());
     }
-
-
 
     private String createPromptForActivity(ActivityDTO activity) {
         return String.format("""
