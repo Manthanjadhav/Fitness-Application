@@ -1,12 +1,14 @@
-package com.manthan.userservice.dto;
+package com.manthan.gateway.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class RegisterRequest {
 
     @NotBlank(message = "Email is required")

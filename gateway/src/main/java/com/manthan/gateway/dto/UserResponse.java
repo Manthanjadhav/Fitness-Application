@@ -1,4 +1,4 @@
-package com.manthan.userservice.dto;
+package com.manthan.gateway.dto;
 import lombok.Builder;
 import lombok.Data;
 

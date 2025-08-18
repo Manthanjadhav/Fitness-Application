@@ -17,11 +17,21 @@ public class UserService {
 
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already in use: " + request.getEmail());
+            User existingUser = userRepository.findByEmail(request.getEmail());
+            return UserResponse.builder()
+                    .id(existingUser.getId())
+                    .keyCloakId(existingUser.getKeyCloakId())
+                    .email(existingUser.getEmail())
+                    .firstName(existingUser.getFirstName())
+                    .lastName(existingUser.getLastName())
+                    .createdAt(existingUser.getCreatedAt())
+                    .updatedAt(existingUser.getUpdatedAt())
+                    .build();
         }
 
         try {
             User user = new User();
+            user.setKeyCloakId(request.getKeyCloakId());
             user.setEmail(request.getEmail());
             user.setPassword(request.getPassword());
             user.setFirstName(request.getFirstName());
@@ -31,6 +41,7 @@ public class UserService {
 
             return UserResponse.builder()
                     .id(savedUser.getId())
+                    .keyCloakId(savedUser.getKeyCloakId())
                     .email(savedUser.getEmail())
                     .firstName(savedUser.getFirstName())
                     .lastName(savedUser.getLastName())
@@ -58,6 +69,6 @@ public class UserService {
 
     public Boolean existsByUserId(String userId) {
         log.info("Calling user Validation Api for userId: "+userId);
-        return userRepository.existsById(userId);
+        return userRepository.existsByKeyCloakId(userId);
     }
 }
