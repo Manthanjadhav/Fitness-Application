@@ -28,6 +28,7 @@ public class ActivityService {
 
     public ActivityResponse trackActivity(ActivityRequest request) {
         log.info("Calling user Validation Api for userId: "+request.getUserId());
+        log.info("request : "+request);
         boolean isValidUser = userValidationService.validateUser(request.getUserId());
         if(!isValidUser){
             throw new RuntimeException("Invalid User:"+ request.getUserId());
