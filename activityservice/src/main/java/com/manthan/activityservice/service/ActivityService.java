@@ -77,4 +77,33 @@ public class ActivityService {
                 .map(this::mapToResponse)
                 .orElseThrow(()->new RuntimeException("Activity not found with Id "+activityId));
     }
+
+    public ActivityResponse updateActivity(String activityId, ActivityRequest request) {
+        // Find existing activity
+        Activity existingActivity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new RuntimeException("Activity not found with Id " + activityId));
+
+        // Validate user
+        if (!userValidationService.validateUser(request.getUserId())) {
+            throw new RuntimeException("Invalid User: " + request.getUserId());
+        }
+
+        // Update fields (only if values are provided in request)
+        existingActivity.setType(request.getType() != null ? request.getType() : existingActivity.getType());
+        existingActivity.setDuration(request.getDuration() != null ? request.getDuration() : existingActivity.getDuration());
+        existingActivity.setCaloriesBurned(request.getCaloriesBurned() != null ? request.getCaloriesBurned() : existingActivity.getCaloriesBurned());
+        existingActivity.setStartTime(request.getStartTime() != null ? request.getStartTime() : existingActivity.getStartTime());
+        existingActivity.setAdditionalMetrics(request.getAdditionalMetrics() != null ? request.getAdditionalMetrics() : existingActivity.getAdditionalMetrics());
+
+        Activity updatedActivity = activityRepository.save(existingActivity);
+
+        // Optionally publish updated activity to RabbitMQ
+        try {
+            rabbitTemplate.convertAndSend(exchange, routingKey, updatedActivity);
+        } catch (Exception e) {
+            log.error("Failed to publish updated activity to RabbitMQ: ", e);
+        }
+
+        return mapToResponse(updatedActivity);
+    }
 }

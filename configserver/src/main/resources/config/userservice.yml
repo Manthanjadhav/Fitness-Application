@@ -2,12 +2,11 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/fitness_user
     username: admin
-    password : admin123
+    password: admin123
   jpa:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-
 
 server:
   port: 8081

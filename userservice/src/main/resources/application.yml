@@ -3,5 +3,10 @@ spring:
     name: userservice
   config:
     import: optional:configserver:http://localhost:8888
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
 
 

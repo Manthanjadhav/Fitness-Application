@@ -31,4 +31,20 @@ public class ActivityController {
     public ResponseEntity<ActivityResponse> getActivity(@PathVariable String activityId){
         return ResponseEntity.ok(activityService.getActivityById(activityId));
     }
+
+    @PutMapping("/{activityId}")
+    public ResponseEntity<ActivityResponse> updateActivity(
+            @PathVariable String activityId,
+            @RequestBody ActivityRequest request,
+            @RequestHeader("X-User-ID") String userId) {
+
+        // Ensure the userId in header is used
+        if (userId != null) {
+            request.setUserId(userId);
+        }
+
+        ActivityResponse updatedActivity = activityService.updateActivity(activityId, request);
+        return ResponseEntity.ok(updatedActivity);
+    }
+
 }

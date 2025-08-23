@@ -2,6 +2,7 @@ package com.manthan.aiservice.service;
 
 import com.manthan.aiservice.dto.ActivityDTO;
 import com.manthan.aiservice.model.Recommendations;
+import com.manthan.aiservice.repository.RecommendationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,53 +11,100 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class ActivityAIService {
+
     private final GeminiService geminiService;
     private final GeminiResponseParser geminiResponseParser;
+    private final RecommendationRepository repository;
+    private final RecommendationService recommendationService; // Inject the service with caching
 
-    public Recommendations generateRecommendation(ActivityDTO activity)
-    {
+    public Recommendations generateRecommendation(ActivityDTO activity) {
+        // First check if recommendation already exists using the cached service
+        Recommendations existingRecommendation = recommendationService.getActivityRecommendation(activity.getId());
+
+        if (existingRecommendation != null) {
+            log.info("Found existing recommendation for activityId: {}", activity.getId());
+            return existingRecommendation;
+        }
+
+        // Generate new recommendation using AI
         String prompt = createPromptForActivity(activity);
         String aiResponse = geminiService.getAnswer(prompt);
-        return geminiResponseParser.parseGeminiResponse(aiResponse, activity.getId(), activity.getUserId(), activity.getType().toString());
+
+        // Parse AI response
+        Recommendations recommendation = geminiResponseParser.parseGeminiResponse(
+                aiResponse, activity.getId(), activity.getUserId(), activity.getType().toString()
+        );
+
+        // Save using the recommendation service which handles caching
+        Recommendations savedRecommendation = recommendationService.saveRecommendation(recommendation);
+
+        log.info("Generated and cached new recommendation for activityId: {}", activity.getId());
+        return savedRecommendation;
+    }
+
+    // Alternative method for force regeneration (bypasses cache)
+    public Recommendations regenerateRecommendation(ActivityDTO activity) {
+        log.info("Force regenerating recommendation for activityId: {}", activity.getId());
+
+        String prompt = createPromptForActivity(activity);
+        String aiResponse = geminiService.getAnswer(prompt);
+
+        // Check if a recommendation already exists in DB
+        Recommendations existingRecommendation = repository
+                .findByActivityId(activity.getId())
+                .orElse(null);
+
+        // Parse AI response
+        Recommendations recommendation = geminiResponseParser.parseGeminiResponse(
+                aiResponse, activity.getId(), activity.getUserId(), activity.getType().toString()
+        );
+
+        // Preserve existing MongoDB ID to update instead of creating new
+        if (existingRecommendation != null) {
+            recommendation.setId(existingRecommendation.getId());
+        }
+
+        // Save using the recommendation service which handles caching
+        return recommendationService.saveRecommendation(recommendation);
     }
 
     private String createPromptForActivity(ActivityDTO activity) {
         return String.format("""
-        Analyze this fitness activity and provide detailed recommendations in the following EXACT JSON format:
-        {
-          "analysis": {
-            "overall": "Overall analysis here",
-            "pace": "Pace analysis here",
-            "heartRate": "Heart rate analysis here",
-            "caloriesBurned": "Calories analysis here"
-          },
-          "improvements": [
+            Analyze this fitness activity and provide detailed recommendations in the following EXACT JSON format:
             {
-              "area": "Area name",
-              "recommendation": "Detailed recommendation"
+              "analysis": {
+                "overall": "Overall analysis here",
+                "pace": "Pace analysis here",
+                "heartRate": "Heart rate analysis here",
+                "caloriesBurned": "Calories analysis here"
+              },
+              "improvements": [
+                {
+                  "area": "Area name",
+                  "recommendation": "Detailed recommendation"
+                }
+              ],
+              "suggestions": [
+                {
+                  "workout": "Workout name",
+                  "description": "Detailed workout description"
+                }
+              ],
+              "safety": [
+                "Safety point 1",
+                "Safety point 2"
+              ]
             }
-          ],
-          "suggestions": [
-            {
-              "workout": "Workout name",
-              "description": "Detailed workout description"
-            }
-          ],
-          "safety": [
-            "Safety point 1",
-            "Safety point 2"
-          ]
-        }
 
-        Analyze this activity:
-        Activity Type: %s
-        Duration: %d minutes
-        Calories Burned: %d
-        Additional Metrics: %s
-        
-        Provide detailed analysis focusing on performance, improvements, next workout suggestions, and safety guidelines.
-        Ensure the response follows the EXACT JSON format shown above and Give response only once.
-        """,
+            Analyze this activity:
+            Activity Type: %s
+            Duration: %d minutes
+            Calories Burned: %d
+            Additional Metrics: %s
+
+            Provide detailed analysis focusing on performance, improvements, next workout suggestions, and safety guidelines.
+            Ensure the response follows the EXACT JSON format shown above and Give response only once.
+            """,
                 activity.getType(),
                 activity.getDuration(),
                 activity.getCaloriesBurned(),

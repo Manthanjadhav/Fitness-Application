@@ -6,8 +6,12 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: admin
-    password: admin123
+    username: guest
+    password: guest
+  redis:
+    host: localhost  # Redis container is mapped to localhost
+    port: 6379       # Default Redis port
+    password:
 
 server:
   port: 8082
